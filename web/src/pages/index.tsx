@@ -1,8 +1,9 @@
 import Head from "next/head";
 import {Inter} from "next/font/google";
 import Table from "react-bootstrap/Table";
-import {Alert, Container} from "react-bootstrap";
+import {Alert, Container, Pagination} from "react-bootstrap";
 import {GetServerSideProps, GetServerSidePropsContext} from "next";
+import { useState } from "react";
 
 const inter = Inter({subsets: ["latin"]});
 
@@ -38,6 +39,51 @@ export const getServerSideProps = (async (ctx: GetServerSidePropsContext): Promi
 
 
 export default function Home({statusCode, users}: TGetServerSideProps) {
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 20;
+  const totalPages = Math.ceil(users.length / itemsPerPage);
+  const maxPageButtons = 10;
+  const halfMaxButtons = Math.floor(maxPageButtons / 2);
+
+  const paginationStart =
+    currentPage <= halfMaxButtons
+      ? 1
+      : currentPage > totalPages - halfMaxButtons
+        ? Math.max(totalPages - maxPageButtons + 1, 1)
+        : currentPage - halfMaxButtons + 1
+
+  const paginationEnd =
+    currentPage <= halfMaxButtons
+      ? Math.min(totalPages, maxPageButtons)
+      : currentPage > totalPages - halfMaxButtons
+        ? totalPages
+        : currentPage + halfMaxButtons;
+
+  const currentUsers = users.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  const handlePageChange = (pageNumber: number) => {
+    setCurrentPage(pageNumber);
+  };
+
+  const handleFirstPage = () => {
+    setCurrentPage(1);
+  };
+
+  const handlePreviousPage = () => {
+    setCurrentPage((prevPage) => Math.max(prevPage - 1, 1));
+  };
+
+  const handleNextPage = () => {
+    setCurrentPage((prevPage) => Math.min(prevPage + 1, totalPages));
+  };
+
+  const handleLastPage = () => {
+    setCurrentPage(totalPages);
+  };
+
   if (statusCode !== 200) {
     return <Alert variant={'danger'}>Ошибка {statusCode} при загрузке данных</Alert>
   }
@@ -67,22 +113,37 @@ export default function Home({statusCode, users}: TGetServerSideProps) {
             </tr>
             </thead>
             <tbody>
-            {
-              users.map((user) => (
-                <tr key={user.id}>
-                  <td>{user.id}</td>
-                  <td>{user.firstname}</td>
-                  <td>{user.lastname}</td>
-                  <td>{user.phone}</td>
-                  <td>{user.email}</td>
-                  <td>{user.updatedAt}</td>
-                </tr>
-              ))
-            }
+            {currentUsers.map((user) => (
+              <tr key={user.id}>
+                <td>{user.id}</td>
+                <td>{user.firstname}</td>
+                <td>{user.lastname}</td>
+                <td>{user.phone}</td>
+                <td>{user.email}</td>
+                <td>{user.updatedAt}</td>
+              </tr>
+            ))}
             </tbody>
           </Table>
 
-          {/*TODO add pagination*/}
+          <Pagination size="sm" className="mt-3">
+            <Pagination.First onClick={handleFirstPage} />
+            <Pagination.Prev onClick={handlePreviousPage} />
+            {Array.from(
+              { length: paginationEnd - paginationStart + 1 },
+              (_, index) => (
+                <Pagination.Item
+                  key={paginationStart + index}
+                  active={paginationStart + index === currentPage}
+                  onClick={() => handlePageChange(paginationStart + index)}
+                >
+                  {paginationStart + index}
+                </Pagination.Item>
+              )
+            )}
+            <Pagination.Next onClick={handleNextPage} />
+            <Pagination.Last onClick={handleLastPage} />
+          </Pagination>
 
         </Container>
       </main>
