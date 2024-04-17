@@ -130,7 +130,7 @@ export default function Home({statusCode, users}: TGetServerSideProps) {
             <Pagination.First onClick={handleFirstPage} />
             <Pagination.Prev onClick={handlePreviousPage} />
             {Array.from(
-              { length: paginationEnd - paginationStart + 1 },
+              Array(paginationEnd - paginationStart + 1),
               (_, index) => (
                 <Pagination.Item
                   key={paginationStart + index}
